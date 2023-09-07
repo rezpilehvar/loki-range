@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	lokirange "github.com/rezpilehvar/loki-range/pkg/lokirange"
+	"github.com/rezpilehvar/loki-range/utils"
 	"github.com/spf13/cobra"
 	"log"
 )
@@ -29,7 +30,16 @@ var queryCmd = &cobra.Command{
 		fmt.Println(fmt.Sprintf("request url: %s", lokiQueryURL))
 		fmt.Println(fmt.Sprintf("limit: %d", limit))
 
-		collectedLogs, err := lokirange.Query(lokiQueryURL, query, limit, timeRange, start, end)
+		if len(timeRange) > 0 {
+			cStart, cEnd, err := utils.CalculateTimeRange(timeRange)
+			if err != nil {
+				log.Fatal(err)
+			}
+			start = cStart
+			end = cEnd
+		}
+
+		collectedLogs, err := lokirange.Query(lokiQueryURL, query, limit, start, end)
 		if err != nil {
 			log.Fatal(err)
 		}

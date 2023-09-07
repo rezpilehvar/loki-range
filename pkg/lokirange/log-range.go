@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/rezpilehvar/loki-range/utils"
 	"io"
 	"log"
 	"net/http"
@@ -13,68 +12,10 @@ import (
 	"os"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 )
 
-func Query(queryURL string, query string, limit int, timeRange string, start, end string) ([]LogItem, error) {
-
-	if len(timeRange) > 0 {
-		now := time.Now()
-		switch {
-		case timeRange == "today":
-			{
-				start = utils.BeginningOfDay(now).Format(time.RFC3339)
-				end = now.Format(time.RFC3339)
-			}
-		case timeRange == "yesterday":
-			{
-				yesterday := now.AddDate(0, 0, -1)
-				start = utils.BeginningOfDay(yesterday).Format(time.RFC3339)
-				end = utils.EndOfDay(yesterday).Format(time.RFC3339)
-			}
-		case strings.HasSuffix(timeRange, "d"):
-			{
-				daysStr, _ := strings.CutSuffix(timeRange, "d")
-				days, err := strconv.Atoi(daysStr)
-				if err != nil {
-					return nil, errors.New("invalid range format")
-				}
-
-				fromDate := now.AddDate(0, 0, -days)
-				start = utils.BeginningOfDay(fromDate).Format(time.RFC3339)
-				end = now.Format(time.RFC3339)
-			}
-		case strings.HasSuffix(timeRange, "h"):
-			{
-				hoursStr, _ := strings.CutSuffix(timeRange, "h")
-				hours, err := strconv.Atoi(hoursStr)
-				if err != nil {
-					return nil, errors.New("invalid range format")
-				}
-
-				fromDate := now.Add(time.Duration(-hours) * time.Hour)
-				start = fromDate.Format(time.RFC3339)
-				end = now.Format(time.RFC3339)
-			}
-		case strings.HasSuffix(timeRange, "m"):
-			{
-				minutesStr, _ := strings.CutSuffix(timeRange, "m")
-				minutes, err := strconv.Atoi(minutesStr)
-				if err != nil {
-					return nil, errors.New("invalid range format")
-				}
-
-				fromDate := now.Add(time.Duration(-minutes) * time.Minute)
-				start = fromDate.Format(time.RFC3339)
-				end = now.Format(time.RFC3339)
-			}
-		default:
-			{
-				return nil, errors.New("invalid range format")
-			}
-		}
-	}
+func Query(queryURL string, query string, limit int, start, end string) ([]LogItem, error) {
 
 	fmt.Println(fmt.Sprintf("input start: %s", start))
 	fmt.Println(fmt.Sprintf("input end: %s", end))
