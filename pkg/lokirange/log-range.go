@@ -15,7 +15,9 @@ import (
 	"time"
 )
 
-func Query(queryURL string, query string, limit int, start, end string) ([]LogItem, error) {
+func Query(lokiURL string, query string, limit int, start, end string) ([]LogItem, error) {
+
+	lokiQueryURL := fmt.Sprintf("%s%s", lokiURL, "/loki/api/v1/query_range")
 
 	fmt.Println(fmt.Sprintf("input start: %s", start))
 	fmt.Println(fmt.Sprintf("input end: %s", end))
@@ -26,7 +28,7 @@ func Query(queryURL string, query string, limit int, start, end string) ([]LogIt
 	var collectedLogItems []LogItem
 	for {
 		fmt.Println(fmt.Sprintf("--------loading chunk #%d--------", chunk))
-		res, err := fetchData(queryURL, query, fetchStart, fetchEnd, limit)
+		res, err := fetchData(lokiQueryURL, query, fetchStart, fetchEnd, limit)
 		if err != nil {
 			return nil, err
 		}

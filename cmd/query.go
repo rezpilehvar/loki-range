@@ -9,13 +9,12 @@ import (
 )
 
 var (
-	lokiUrl      string
-	limit        int
-	start        string
-	end          string
-	timeRange    string
-	lokiQueryURL string
-	query        string
+	lokiUrl   string
+	limit     int
+	start     string
+	end       string
+	timeRange string
+	query     string
 )
 
 var queryCmd = &cobra.Command{
@@ -25,9 +24,7 @@ var queryCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		query = args[0]
-		lokiQueryURL = fmt.Sprintf("%s%s", lokiUrl, "/loki/api/v1/query_range")
 		fmt.Println(fmt.Sprintf("query: %s", query))
-		fmt.Println(fmt.Sprintf("request url: %s", lokiQueryURL))
 		fmt.Println(fmt.Sprintf("limit: %d", limit))
 
 		if len(timeRange) > 0 {
@@ -39,7 +36,7 @@ var queryCmd = &cobra.Command{
 			end = cEnd
 		}
 
-		collectedLogs, err := lokirange.Query(lokiQueryURL, query, limit, start, end)
+		collectedLogs, err := lokirange.Query(lokiUrl, query, limit, start, end)
 		if err != nil {
 			log.Fatal(err)
 		}
