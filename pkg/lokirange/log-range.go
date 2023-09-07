@@ -38,7 +38,7 @@ func Query(lokiURL string, query string, limit int, start, end string) ([]LogIte
 
 		collectedLogItems = append(collectedLogItems, res.Data.Result...)
 		if len(res.Data.Result) > 0 && res.Data.Stats.Summary.TotalEntriesReturned == limit {
-			lastItemTimeNano, _ := strconv.ParseInt(res.Data.Result[len(res.Data.Result)-1].Values[0][0], 10, 64)
+			lastItemTimeNano, _ := strconv.ParseInt(ParseToString(res.Data.Result[len(res.Data.Result)-1].Values[0][0]), 10, 64)
 			fetchStart = time.Unix(0, lastItemTimeNano).Format(time.RFC3339)
 			chunk++
 		} else {
@@ -138,8 +138,8 @@ func fetchData(lokiQueryURL string, query string, start string, end string, limi
 		fmt.Println("sorting logs...")
 
 		sort.Slice(response.Data.Result, func(i, j int) bool {
-			iNanoTime, _ := strconv.ParseInt(response.Data.Result[i].Values[0][0], 10, 64)
-			jNanoTime, _ := strconv.ParseInt(response.Data.Result[j].Values[0][0], 10, 64)
+			iNanoTime, _ := strconv.ParseInt(ParseToString(response.Data.Result[i].Values[0][0]), 10, 64)
+			jNanoTime, _ := strconv.ParseInt(ParseToString(response.Data.Result[j].Values[0][0]), 10, 64)
 			return iNanoTime < jNanoTime
 		})
 
@@ -165,7 +165,23 @@ type LokiQueryResponse struct {
 	}
 }
 
+func ParseToString(values interface{}) string {
+	switch v := values.(type) {
+	case int:
+		return strconv.Itoa(v)
+	case float64:
+		return strconv.FormatFloat(v, 'f', 0, 64)
+	case string:
+		return v
+	case int64:
+		return strconv.FormatInt(v, 10)
+	default:
+		panic("cannot parse this value to string!")
+	}
+}
+
 type LogItem struct {
 	Stream map[string]string `json:"stream"`
-	Values [][]string        `json:"values"`
+	Metric map[string]string `json:"metric"`
+	Values [][]interface{}   `json:"values"`
 }
