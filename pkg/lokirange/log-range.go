@@ -108,7 +108,7 @@ func Query(queryURL string, query string, limit int, timeRange string, start, en
 	return collectedLogItems, nil
 }
 
-func WriteToCsv(collectedLogItems []LogItem) error {
+func WriteToCsv(collectedLogItems []LogItem, reportName string) error {
 
 	headers := make(map[string]int)
 	for _, record := range collectedLogItems {
@@ -134,7 +134,7 @@ func WriteToCsv(collectedLogItems []LogItem) error {
 		}
 	}
 
-	csvFile, err := os.Create("export.csv")
+	csvFile, err := os.Create(fmt.Sprintf("%s.csv", reportName))
 	if err != nil {
 		return fmt.Errorf("failed creating csv file: %s", err)
 	}

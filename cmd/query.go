@@ -34,7 +34,7 @@ var queryCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		err = lokirange.WriteToCsv(collectedLogs)
+		err = lokirange.WriteToCsv(collectedLogs, "export")
 		if err != nil {
 			log.Fatal(err)
 		}
