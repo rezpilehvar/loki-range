@@ -36,12 +36,12 @@ var queryCmd = &cobra.Command{
 			end = cEnd
 		}
 
-		collectedLogs, err := lokirange.Query(lokiUrl, query, limit, start, end)
+		collectedLogs, queryType, err := lokirange.Query(lokiUrl, query, limit, start, end)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		err = lokirange.WriteToCsv(collectedLogs, "export")
+		err = lokirange.WriteToCsv(collectedLogs, "export", queryType)
 		if err != nil {
 			log.Fatal(err)
 		}

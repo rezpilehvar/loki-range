@@ -57,6 +57,18 @@ func CalculateTimeRange(timeRange string) (start string, end string, err error) 
 			start = fromDate.Format(time.RFC3339)
 			end = now.Format(time.RFC3339)
 		}
+	case strings.HasSuffix(timeRange, "s"):
+		{
+			secondsStr, _ := strings.CutSuffix(timeRange, "s")
+			seconds, err := strconv.Atoi(secondsStr)
+			if err != nil {
+				return "", "", errors.New("invalid range format")
+			}
+
+			fromDate := now.Add(time.Duration(-seconds) * time.Second)
+			start = fromDate.Format(time.RFC3339)
+			end = now.Format(time.RFC3339)
+		}
 	default:
 		{
 			return "", "", errors.New("invalid range format")

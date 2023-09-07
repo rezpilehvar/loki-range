@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-func Query(lokiURL string, query string, limit int, start, end string) ([]LogItem, error) {
+func Query(lokiURL string, query string, limit int, start, end string) ([]LogItem, QueryType, error) {
 
 	lokiQueryURL := fmt.Sprintf("%s%s", lokiURL, "/loki/api/v1/query_range")
 
@@ -26,16 +26,18 @@ func Query(lokiURL string, query string, limit int, start, end string) ([]LogIte
 	fetchStart := start
 	fetchEnd := end
 	var collectedLogItems []LogItem
+	var queryType QueryType
 	for {
 		fmt.Println(fmt.Sprintf("--------loading chunk #%d--------", chunk))
 		res, err := fetchData(lokiQueryURL, query, fetchStart, fetchEnd, limit)
 		if err != nil {
-			return nil, err
+			return nil, NONE, err
 		}
 
 		fmt.Println(fmt.Sprintf("chunk #%d-> query exec time: %f", chunk, res.Data.Stats.Summary.ExecTime))
 		fmt.Println(fmt.Sprintf("chunk #%d-> entries returned: %d", chunk, res.Data.Stats.Summary.TotalEntriesReturned))
 
+		queryType = res.Data.QueryType
 		collectedLogItems = append(collectedLogItems, res.Data.Result...)
 		if len(res.Data.Result) > 0 && res.Data.Stats.Summary.TotalEntriesReturned == limit {
 			lastItemTimeNano, _ := strconv.ParseInt(ParseToString(res.Data.Result[len(res.Data.Result)-1].Values[0][0]), 10, 64)
@@ -48,19 +50,45 @@ func Query(lokiURL string, query string, limit int, start, end string) ([]LogIte
 	fmt.Println(fmt.Sprintf("data collected in %d chunks", chunk))
 	fmt.Println(fmt.Sprintf("total retreived entries: %d", len(collectedLogItems)))
 
-	return collectedLogItems, nil
+	return collectedLogItems, queryType, nil
 }
 
-func WriteToCsv(collectedLogItems []LogItem, reportName string) error {
+type QueryType string
+
+const (
+	MATRIX  QueryType = "matrix"
+	STREAMS QueryType = "streams"
+	NONE    QueryType = "none"
+)
+
+func WriteToCsv(collectedLogItems []LogItem, reportName string, queryType QueryType) error {
 
 	headers := make(map[string]int)
-	for _, record := range collectedLogItems {
-		for key := range record.Stream {
-			if _, ok := headers[key]; !ok {
-				headers[key] = len(headers)
+
+	switch queryType {
+	case MATRIX:
+		{
+			for _, record := range collectedLogItems {
+				for key := range record.Metric {
+					if _, ok := headers[key]; !ok {
+						headers[key] = len(headers)
+					}
+				}
+			}
+			headers["value"] = len(headers)
+		}
+	case STREAMS:
+		{
+			for _, record := range collectedLogItems {
+				for key := range record.Stream {
+					if _, ok := headers[key]; !ok {
+						headers[key] = len(headers)
+					}
+				}
 			}
 		}
 	}
+
 	headersArr := make([]string, len(headers))
 
 	for key, value := range headers {
@@ -71,10 +99,23 @@ func WriteToCsv(collectedLogItems []LogItem, reportName string) error {
 
 	for idx, record := range collectedLogItems {
 		rows[idx] = make([]string, len(headers))
-
-		for key, value := range record.Stream {
-			rows[idx][headers[key]] = value
+		switch queryType {
+		case MATRIX:
+			{
+				for key, value := range record.Metric {
+					rows[idx][headers[key]] = value
+				}
+				value := ParseToString(record.Values[len(record.Values)-1][1])
+				rows[idx][len(headers)-1] = value
+			}
+		case STREAMS:
+			{
+				for key, value := range record.Stream {
+					rows[idx][headers[key]] = value
+				}
+			}
 		}
+
 	}
 
 	csvFile, err := os.Create(fmt.Sprintf("%s.csv", reportName))
@@ -155,14 +196,21 @@ func fetchData(lokiQueryURL string, query string, start string, end string, limi
 type LokiQueryResponse struct {
 	Status string `json:"status"`
 	Data   struct {
-		Result []LogItem `json:"result"`
-		Stats  struct {
+		QueryType QueryType `json:"resultType"`
+		Result    []LogItem `json:"result"`
+		Stats     struct {
 			Summary struct {
 				ExecTime             float32 `json:"execTime"`
 				TotalEntriesReturned int     `json:"totalEntriesReturned"`
 			} `json:"summary"`
 		} `json:"stats"`
 	}
+}
+
+type LogItem struct {
+	Stream map[string]string `json:"stream"`
+	Metric map[string]string `json:"metric"`
+	Values [][]interface{}   `json:"values"`
 }
 
 func ParseToString(values interface{}) string {
@@ -178,10 +226,4 @@ func ParseToString(values interface{}) string {
 	default:
 		panic("cannot parse this value to string!")
 	}
-}
-
-type LogItem struct {
-	Stream map[string]string `json:"stream"`
-	Metric map[string]string `json:"metric"`
-	Values [][]interface{}   `json:"values"`
 }
