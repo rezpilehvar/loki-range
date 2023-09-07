@@ -32,8 +32,8 @@ var queryCmd = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
-			start = cStart
-			end = cEnd
+			start = utils.Format(cStart)
+			end = utils.Format(cEnd)
 		}
 
 		collectedLogs, queryType, err := lokirange.Query(lokiUrl, query, limit, start, end)

@@ -7,71 +7,79 @@ import (
 	"time"
 )
 
-func CalculateTimeRange(timeRange string) (start string, end string, err error) {
+func Format(dateTime *time.Time) string {
+	return dateTime.Format(time.RFC3339)
+}
+func CalculateTimeRange(timeRange string) (start *time.Time, end *time.Time, err error) {
 	now := time.Now()
 	switch {
 	case timeRange == "today":
 		{
-			start = BeginningOfDay(now).Format(time.RFC3339)
-			end = now.Format(time.RFC3339)
+			startTime := BeginningOfDay(now)
+			start = &startTime
+			end = &now
 		}
 	case timeRange == "yesterday":
 		{
 			yesterday := now.AddDate(0, 0, -1)
-			start = BeginningOfDay(yesterday).Format(time.RFC3339)
-			end = EndOfDay(yesterday).Format(time.RFC3339)
+			startTime := BeginningOfDay(yesterday)
+			endTime := EndOfDay(yesterday)
+			start = &startTime
+			end = &endTime
 		}
 	case strings.HasSuffix(timeRange, "d"):
 		{
 			daysStr, _ := strings.CutSuffix(timeRange, "d")
 			days, err := strconv.Atoi(daysStr)
 			if err != nil {
-				return "", "", errors.New("invalid range format")
+				return nil, nil, errors.New("invalid range format")
 			}
 
 			fromDate := now.AddDate(0, 0, -days)
-			start = BeginningOfDay(fromDate).Format(time.RFC3339)
-			end = now.Format(time.RFC3339)
+			startTime := BeginningOfDay(fromDate)
+
+			start = &startTime
+			end = &now
 		}
 	case strings.HasSuffix(timeRange, "h"):
 		{
 			hoursStr, _ := strings.CutSuffix(timeRange, "h")
 			hours, err := strconv.Atoi(hoursStr)
 			if err != nil {
-				return "", "", errors.New("invalid range format")
+				return nil, nil, errors.New("invalid range format")
 			}
 
 			fromDate := now.Add(time.Duration(-hours) * time.Hour)
-			start = fromDate.Format(time.RFC3339)
-			end = now.Format(time.RFC3339)
+			start = &fromDate
+			end = &now
 		}
 	case strings.HasSuffix(timeRange, "m"):
 		{
 			minutesStr, _ := strings.CutSuffix(timeRange, "m")
 			minutes, err := strconv.Atoi(minutesStr)
 			if err != nil {
-				return "", "", errors.New("invalid range format")
+				return nil, nil, errors.New("invalid range format")
 			}
 
 			fromDate := now.Add(time.Duration(-minutes) * time.Minute)
-			start = fromDate.Format(time.RFC3339)
-			end = now.Format(time.RFC3339)
+			start = &fromDate
+			end = &now
 		}
 	case strings.HasSuffix(timeRange, "s"):
 		{
 			secondsStr, _ := strings.CutSuffix(timeRange, "s")
 			seconds, err := strconv.Atoi(secondsStr)
 			if err != nil {
-				return "", "", errors.New("invalid range format")
+				return nil, nil, errors.New("invalid range format")
 			}
 
 			fromDate := now.Add(time.Duration(-seconds) * time.Second)
-			start = fromDate.Format(time.RFC3339)
-			end = now.Format(time.RFC3339)
+			start = &fromDate
+			end = &now
 		}
 	default:
 		{
-			return "", "", errors.New("invalid range format")
+			return nil, nil, errors.New("invalid range format")
 		}
 	}
 
