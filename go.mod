@@ -1,4 +1,4 @@
-module loki-api
+module github.com/rezpilehvar/loki-range
 
 go 1.21
 
