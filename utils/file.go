@@ -11,5 +11,6 @@ func CreateFile(name string) (*os.File, error) {
 	relPath = strings.Replace(relPath, `\`, `/`, -1)
 	relPath = strings.TrimLeft(relPath, `/`)
 	relPath = strings.Replace(relPath, " ", "-", -1)
+	relPath = strings.Replace(relPath, ":", "-", -1)
 	return os.Create(relPath)
 }
