@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/rezpilehvar/loki-range/utils"
 	"io"
 	"log"
 	"net/http"
@@ -118,7 +119,7 @@ func WriteToCsv(collectedLogItems []LogItem, reportName string, queryType QueryT
 
 	}
 
-	csvFile, err := os.Create(fmt.Sprintf("%s.csv", reportName))
+	csvFile, err := utils.CreateFile(fmt.Sprintf("%s.csv", reportName))
 	if err != nil {
 		return fmt.Errorf("failed creating csv file: %s", err)
 	}
